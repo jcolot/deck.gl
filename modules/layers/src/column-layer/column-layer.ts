@@ -49,7 +49,6 @@ const defaultProps: DefaultProps<ColumnLayerProps> = {
   vertices: null,
   radius: {type: 'number', min: 0, value: 1000},
   angle: {type: 'number', value: 0},
-  offset: {type: 'array', value: [0, 0]},
   coverage: {type: 'number', min: 0, max: 1, value: 1},
   elevationScale: {type: 'number', min: 0, value: 1},
   radiusUnits: 'meters',
@@ -64,6 +63,7 @@ const defaultProps: DefaultProps<ColumnLayerProps> = {
   stroked: false,
   flatShading: false,
 
+  getOffset: { type: 'accessor', value: [0, 0, 0] },
   getPosition: {type: 'accessor', value: (x: any) => x.position},
   getFillColor: {type: 'accessor', value: DEFAULT_COLOR},
   getLineColor: {type: 'accessor', value: DEFAULT_COLOR},
@@ -102,12 +102,6 @@ type _ColumnLayerProps<DataT> = {
    * @default null
    */
   vertices?: Position[] | null;
-
-  /**
-   * Disk offset from the position, relative to the radius.
-   * @default [0,0]
-   */
-  offset?: [number, number];
 
   /**
    * Radius multiplier, between 0 - 1
@@ -214,6 +208,14 @@ type _ColumnLayerProps<DataT> = {
   getLineColor?: Accessor<DataT, Color>;
 
   /**
+   * Offset value or accessor.
+   *
+   * @default [0, 0, 0]
+   */
+  getOffset?: Accessor<DataT, [number, number, number]>;
+
+
+  /**
    * The elevation of each cell in meters.
    * @default 1000
    */
@@ -233,14 +235,6 @@ export default class ColumnLayer<DataT = any, ExtraPropsT extends {} = {}> exten
 > {
   static layerName = 'ColumnLayer';
   static defaultProps = defaultProps;
-
-  state!: {
-    fillModel?: Model;
-    wireframeModel?: Model;
-    models?: Model[];
-    fillVertexCount: number;
-    edgeDistance: number;
-  };
 
   getShaders() {
     const defines: Record<string, any> = {};
@@ -270,7 +264,12 @@ export default class ColumnLayer<DataT = any, ExtraPropsT extends {} = {}> exten
         type: 'float64',
         fp64: this.use64bitPositions(),
         transition: true,
-        accessor: 'getPosition'
+        accessor: 'getPosition',
+      },
+      instanceOffsets: {
+        size: 3,
+        transition: true,
+        accessor: "getOffset",
       },
       instanceElevations: {
         size: 1,
@@ -406,7 +405,6 @@ export default class ColumnLayer<DataT = any, ExtraPropsT extends {} = {}> exten
       filled,
       stroked,
       wireframe,
-      offset,
       coverage,
       radius,
       angle
@@ -419,7 +417,6 @@ export default class ColumnLayer<DataT = any, ExtraPropsT extends {} = {}> exten
       ...uniforms,
       radius,
       angle: (angle / 180) * Math.PI,
-      offset,
       extruded,
       stroked,
       coverage,

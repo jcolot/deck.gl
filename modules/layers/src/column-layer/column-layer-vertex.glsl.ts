@@ -25,6 +25,7 @@ export default `#version 300 es
 in vec3 positions;
 in vec3 normals;
 
+in vec3 instanceOffsets;
 in vec3 instancePositions;
 in float instanceElevations;
 in vec3 instancePositions64Low;
@@ -91,7 +92,7 @@ void main(void) {
   geometry.pickingColor = instancePickingColors;
 
   // project center of column
-  vec3 centroidPosition = vec3(instancePositions.xy, instancePositions.z + elevation);
+  vec3 centroidPosition = vec3(instancePositions.xy, instancePositions.z + elevation + instanceOffsets.z);
   vec3 centroidPosition64Low = instancePositions64Low;
   vec2 offset = (rotationMatrix * positions.xy * strokeOffsetRatio + offset) * dotRadius;
   if (radiusUnits == UNIT_METERS) {
